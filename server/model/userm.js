@@ -1,4 +1,7 @@
-const dbConnection ='mongodb+srv://kaushikpranjali7:2002@cluster0.tngl5ld.mongodb.net/?retryWrites=true&w=majority';
+const dotenv = require('dotenv');
+dotenv.config({path : './config.env'})
+
+const dbConnection = process.env.DB_CONNECT;
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
