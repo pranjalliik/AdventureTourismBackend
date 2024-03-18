@@ -1,6 +1,7 @@
 const tourModel = require('../model/tourm');
 const multer = require('multer')
-
+const catchAsync = require('./../utils/catchAsync');
+const AppError = require('../utils/appError')
 const multrtStorage = multer.diskStorage({
 destination : (req,file,cb) =>{
     cb(null,'client/src/images')
@@ -29,7 +30,7 @@ exports.uploadTourPhoto = upload.single('photo');
 
 
 
-module.exports.createtour = async function createCourse(req,res){
+exports.createtour = catchAsync(async(req,res,next)=>{
     try{
         console.log(req.file)
         console.log(req.body)
@@ -47,40 +48,30 @@ module.exports.createtour = async function createCourse(req,res){
         })
     }
     
-}
+})
 
-module.exports.alltour = async function alltour(req,res){
-    try{
+
+exports.alltour = catchAsync(async (req, res, next) =>{
+  
+        console.log('alltour')
         let tour = await tourModel.find();
-        const cookieopt = {
-        expires: new Date(
-            Date.now() + 2 * 24 *60 * 60 *1000),httpOnly:true
-          
+        if(!tour){
+          next(new AppError('tours not found'))
+           
         }
-     res.cookie('test','123',cookieopt)
-        if(tour){
-            res.json({
+
+        res.status(200).json({
             message:'tour retrived',
             data:tour
             })
-        }else{
-            res.json({
-                message:'tour not found',
-                })
-        }
-    }
-    catch(err){
-        return res.status(500).json({
-            message: err.message
-        })
-    }
-}
+    
+})
 
 
-module.exports.allthreetour = async function allthreetour(req,res){
-    try{
+exports.allthreetour = catchAsync(async (req,res,next)=>{
+    
         let tour = await tourModel.find();
-        const firstThreeElements = tour.slice(0, 3);
+        const firstThreeElements = tour.slice(0, 4);
         if(tour){
             res.json({
             message:'tour retrived',
@@ -91,37 +82,29 @@ module.exports.allthreetour = async function allthreetour(req,res){
                 message:'tour not found',
                 })
         }
-    }
-    catch(err){
-        return res.status(500).json({
-            message: err.message
-        })
-    }
-}
 
-module.exports.deletetour = async function deletetour(req,res){
-    try{
+}
+)
+
+exports.deletetour = catchAsync (async(req,res,next)=>{
+  
         let id = req.params.id;
         let deletedtour = await tourModel.findByIdAndDelete(id);
         return  res.json({
             message : "tour DELETED",
             data: deletedtour
         })
-    }catch(err){
-        return res.json({
-            message: err.message
-        })
-    }
-}
 
-module.exports.updatetour = async function updatetour(req,res){
-    try{
+}
+)
+
+exports.updatetour = catchAsync( async(req,res,next)=>{
+    
         let id = req.params.id;
         let dataToBeUpdated = req.body;
         let keys = [];
         let tour = await tourModel.findById(id); 
-        console.log('olddata')
-       console.log(dataToBeUpdated )
+
         for(let key in dataToBeUpdated){
             keys.push(key);
         }
@@ -132,29 +115,47 @@ module.exports.updatetour = async function updatetour(req,res){
           tour[keys[i]] = dataToBeUpdated[keys[i]];
         }
         
-        //const updatedData = await tour.save();
-        const updatedTour = await tourModel.findByIdAndUpdate(id, dataToBeUpdated, {
+        const updatedData = await tour.save();
+     /*   const updatedTour = await tourModel.findByIdAndUpdate(id, dataToBeUpdated, {
             new: true, // Return the updated document
             runValidators: true // Run Mongoose schema validators on update
           });
-        
-          console.log(updatedTour  + "gjk")
+        */
+          console.log(updatedData  + "gjk")
 
        return  res.json({
         message : "plan updated",
-       data: updatedTour
+       data: updatedData
     })
-    }
-    catch(err){
-        return res.json({
-            message: err.message
-        })
-    }
-}
+   
+})
 
-module.exports.gettour = async function updatetour(req,res){
-    try{
-        console.log("gettour");
+exports.gettour = catchAsync(async (req,res,next)=>{
+   
+        console.log("gettou at t he sunr");
+       let id = req.params.id;
+           console.log(id);
+
+let tour = await tourModel.findById(id);
+
+if(!tour){
+    next(new AppError('tours not found',404))
+     
+  }
+
+  return  res.json({
+        message : "all tour",
+        data: tour
+    })
+
+
+
+}
+)
+
+exports.gettour = catchAsync(async(req,res,next)=>{
+
+    console.log("gettour i stay ");
        let id = req.params.id;
            console.log(id);
 
@@ -171,10 +172,33 @@ if(tour){
 
     })
 }
-}catch(err){
-    return res.status(500).json({
-        message: err.message
+
+
+}
+
+)
+
+exports.getAdmintour = catchAsync(async (req,res,next)=>{
+
+        let id = req.user._id;
+        console.log(id +'every');
+
+        console.log("gettour kl,;");
+           
+
+let tour = await tourModel.find({manager : id});
+console.log("byee")
+if(tour){
+  return  res.json({
+        message : "all tours og admin",
+        data: tour
+    })
+}else{
+    return  res.json({
+        message : "no tour found",
+
     })
 }
 
-}
+
+})

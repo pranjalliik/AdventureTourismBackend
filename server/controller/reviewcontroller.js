@@ -1,18 +1,14 @@
 const tourModel = require('../model/tourm');
 const reviewModel = require('../model/reviewm');
 const userModel = require('../model/userm')
+const catchAsync = require('./../utils/catchAsync');
+const AppError = require('../utils/appError')
 
 
-const catchAsync = fn => {
-    return(req,res,next)=>{
-    fn(req,res,next).catch(next)
-}
-}
 
 
-module.exports.createReview = async function createReview(req,res){
-    try{
-    
+
+exports.createReview = catchAsync( async (req,res,next)=>{
     
      let tourrev = req.body;
      tourrev.tour = req.params.id;
@@ -36,20 +32,17 @@ let x = prevtotal + parseInt(req.body.rating)
         reviewdata: savereview,
         tourdata : updatedData
     })
-    }catch(err){
-        return res.json({
-            message: err.message
-        })
-    }
+
     
     }
+)
 
+    exports.allReviews = catchAsync(async (req,res,next)=>{
 
-    module.exports.allReviews = catchAsync(async function allReviews(req,res){
-
-        console.log("allreview")
+        console.log("allreview") 
         let reviews = await reviewModel.find();
         let arr = reviews.slice(0,3);
+        console.log(arr)
         if(reviews){
             res.json({
             message:'reviews retrived',
@@ -65,22 +58,23 @@ let x = prevtotal + parseInt(req.body.rating)
 
 
 
-    module.exports.getTourReview = async function getTourReview(req,res){
-        console.log("getTourReview")
 
-        try{
+  exports.getTourReview =catchAsync( async (req,res,next)=>{
+
             console.log("getTourReview")
         let id = req.params.id;
         
         let reviews = await reviewModel.find({ tour : id});
+
+        if(!reviews){
+            next(new AppError('reviews not found'))
+             
+          }
+  
+
+
         res.json({
             message:'reviews retrived',
             data: reviews
             })
-        }catch(err){
-            return res.json({
-                message: err.message
-            })
-        }
-
-    }
+        })

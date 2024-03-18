@@ -56,17 +56,17 @@ const userSchema = mongoose.Schema({
 });
 
 userSchema.methods.createResetToken =async function(){
-const resetToken =  crypto.randomBytes(32).toString("hex");
-console.log('Generated Reset Token:', resetToken);
+const token =  crypto.randomBytes(32).toString("hex");
+//console.log('Generated Reset Token:', resetToken);
 this.resetToken = crypto
                 .createHash('sha256')
-                .update(resetToken)
+                .update(token)
                 .digest('hex'); 
 
                 console.log('Hashed Reset Token:', this.resetToken);               
 this.passwordresetexpires = Date.now() + 10 * 60 *1000;
 
-return resetToken;
+return token;
 
 }
 

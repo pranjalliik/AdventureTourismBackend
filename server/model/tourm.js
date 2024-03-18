@@ -55,15 +55,32 @@ const tourSchema = mongoose.Schema({
       type : String ,
       default : 'tourPage.jpg'
     },
-    manager : Array
-   });
-   
-   
-   tourSchema.pre('save',async function(next){
-    const guidesPromises = this.guides.map(async id => await userModel.findById(id))
-    this.guides = await Promise.all(guidesPromises)
-    next();
-   });
+    manager : {
+      type : mongoose.Schema.ObjectId,
+      ref : 'userModel',
+      /** failed to implement validation role =='admin'
+      
+       */
+     // message: 'Manager must have the role of "admin".',
+    },
 
+    seheduleType :{
+      type : String
+    }
+    }
+   );
+   
+   /*
+   tourSchema.pre(['save', 'findByIdAndUpdate'],async function(next){
+      console.log('inside pop')
+      console.log(this) 
+      if (this.manager && this.isModified('manager')) {
+         console.log('inside pop')
+         // Perform the population of the manager field
+         await this.populate('manager')
+       }
+       next();
+   });
+*/
    const tourModel = mongoose.model('tourModel',tourSchema);
    module.exports = tourModel ;

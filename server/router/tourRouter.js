@@ -2,28 +2,33 @@
 const express = require('express');
 let tourRouter = express.Router();
 let multer = require('multer')
-const {createtour,alltour,deletetour,updatetour,gettour,uploadTourPhoto,allthreetour} = require('../controller/tourcontroller');
+const {createtour,alltour,deletetour,updatetour,gettour,uploadTourPhoto,allthreetour,getAdmintour} = require('../controller/tourcontroller');
 let{protectRoute,isAuthorized,uploaduserphoto} = require('../controller/authcontroller');
 const upload = multer({dest:'uploads/'})
 
 
-tourRouter
-.route('/')
-.get(alltour)
+tourRouter.get('/',alltour)
 
-tourRouter
-.route('/topthree')
-.get(allthreetour)
+tourRouter.get('/topthree',allthreetour)
 
 
-tourRouter
-.route('/:id')
-.get(gettour)
 
-tourRouter.use(protectRoute)
+
+
+
+tourRouter.get('/admin',protectRoute,getAdmintour)
+//tourRouter.use(protectRoute)
+//isAuthorized(['admin','manager']),
+
+tourRouter.get('/:id',gettour)
+
+
+
+
+
 tourRouter
-.route('/crud/:id')
-.patch(isAuthorized(['admin','manager']),updatetour)
+.route('/crud/:id') 
+.patch(updatetour)
 
 
 

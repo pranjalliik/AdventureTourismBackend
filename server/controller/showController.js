@@ -1,8 +1,9 @@
 const showModel = require('../model/showm')
+const catchAsync = require('./../utils/catchAsync');
 
 
-module.exports.createShow= async function createShow(req,res){
-  try{
+exports.createShow= catchAsync(async (req,res,next)=>{
+ 
     console.group('createShow')
         let id  = req.params.id;
            
@@ -20,24 +21,13 @@ module.exports.createShow= async function createShow(req,res){
         console.log(formattedDate);
 
         let showCreated = await showModel.create(slotData);
-        return  res.json({
+        return  res.status(200).json({
             message : "show created",
            data: showCreated
         })
-    }
-    catch(err){
-        console.log(err)
-        return res.json({
-            message: err.message
-        })
-    }
-    
+})
 
-
-}
-
-module.exports.allShow= async function allShow(req,res){
-try{
+exports.allShow= catchAsync(async (req,res,next)=>{
     let tourId = req.params.id;
   let show = await showModel.find({ tour: tourId }).sort({ date: 1 })
 
@@ -45,18 +35,9 @@ try{
         message : "All show ",
        data: show
     })
-}
-catch(err){
-    return res.json({
-        message: err.message
-    })
-}
+})
 
-
-}
-
-module.exports.updateShow= async function updateShow(req,res){
-    try{
+exports.updateShow= catchAsync(async (req,res,next)=>{
         console.log('update show')
         let id = req.params.id;
         let dataToBeUpdated = {}
@@ -81,16 +62,10 @@ module.exports.updateShow= async function updateShow(req,res){
             message : "updated show ",
            data: show
         })
-    }catch(err){
-        return res.json({
-            message: err.message
-        })
-    }
-}
+})
 
 
-module.exports.deleteShow = async function deleteShow(req,res){
-    try{
+exports.deleteShow = catchAsync(async(req,res,next)=>{
         console.log('deleteshow')
         let id = req.params.id
         let deleteshow = await showModel.findByIdAndDelete(id);
@@ -98,9 +73,5 @@ module.exports.deleteShow = async function deleteShow(req,res){
             message : "show DELETED",
             data: deleteshow
         })
-    }catch(err){
-        return res.json({
-            message: err.message
-        })
-    }
-}
+   
+})

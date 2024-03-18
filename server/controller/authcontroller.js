@@ -1,7 +1,7 @@
 const  userModel = require('../model/userm');
-//const createResetToken  =  require('../model/userm');
+ const createResetToken  =  require('../model/userm');
 const tourModel = require('../model/tourm');
-const sendMail = require('../utils/email')
+const Email = require('../utils/email')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -36,7 +36,7 @@ module.exports.signUp = async function signUp(req,res){
    res.cookie('jwt',token,cookieopt)
   
        if(user){
-        console.log(req.user)
+        console.log(req.user + 'its me hii')
            res.status(200).json({
                
                message:"user signed up",
@@ -70,14 +70,13 @@ module.exports.signUp = async function signUp(req,res){
                    }) 
                  }else{
              const token = signToken(user._id);
-         //    req.user = user;
                const cookieopt = {
                expires: new Date(
-               Date.now() + 2 * 24 *60 * 60 *1000),httpOnly:true
+               Date.now() + 10 * 24 *60 * 60 *1000),httpOnly:true
       
                }
            res.cookie('jwt',token,cookieopt)
-
+           
              return res.status(200).json({
              message:'signin ',
              user : user,
@@ -94,7 +93,7 @@ module.exports.signUp = async function signUp(req,res){
       console.log("isauthorized")
       try {
         //console.log(req.user._id);
-        console.log(roles);
+        console.log(roles +'im the prob');
         
         if (roles.includes(req.user.role)) {
           if(req.user.role === 'admin'){
@@ -109,8 +108,8 @@ module.exports.signUp = async function signUp(req,res){
               console.log("manager is authorized");
               next();
             } else{
-             console.log(managerId[0]._id);
-             console.log(req.user._id);
+             console.log(managerId[0]._id +'at tea');
+             console.log(req.user._id+'time');
 
               res.status(401).json({
                 message: "manager not allowed"
@@ -137,17 +136,18 @@ module.exports.signUp = async function signUp(req,res){
    
 
    module.exports.protectRoute = async function protectRoute(req,res,next){
-    console.log("protect")
  
     try{
-    console.log(req.cookies)
+      console.log('protect')
+    console.log(req.cookies +'<-cookies obj')
         if(!req.cookies.jwt){
           return res.status(401).json({
             message:'token not present'
           }) }
 
           let token = req.cookies.jwt
-   
+          console.log("protect")
+
    
 
 // token veriication
@@ -157,7 +157,7 @@ console.log(decoded)
 
 // check if user still exists
 const fuser = await userModel.findById(decoded.id)
-console.log(fuser)
+console.log('user info-> ', fuser)
 if(!fuser){
     return res.status(401).json({
         message:'user no longer exists'
@@ -207,16 +207,12 @@ module.exports.forgotpass =async function forgotpass(req,res){
   
       await user.save({validateBeforeSave :false})
     console.log('vbnm')
-
+    try {
     const reseturl = `localhost:3000/users/resetpassword/${token}` ;
 
     const msg = ` link ${reseturl}`
- try{
-    await sendMail({
-      email : user.email,
-      subject : 'reset your password',
-      msg
-    })
+
+    await new Email(user, reseturl).sendPasswordReset();
     res.status(200).json({
       message: "mail sent to user"
     })
@@ -267,7 +263,7 @@ try{
 const token = signToken(user._id)
 const cookieopt = {
  expires: new Date(
-   Date.now() + 2 * 24 *60 * 60 *1000),httpOnly:true
+   Date.now() + 10 * 24 *60 * 60 *1000),httpOnly:true
  
 }
 res.cookie('jwt',token,cookieopt)
