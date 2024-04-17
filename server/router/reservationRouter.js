@@ -2,23 +2,22 @@ const express = require('express');
 let reservationRouter = express.Router();
 
 let{protectRoute,isAuthorized} = require('../controller/authcontroller');
-let{createReservation,getCheckoutSession,getUserReservation} = require('../controller/reservationController');
+let{getreviewBooking ,createReservation, getCheckoutSession,getUserReservation} = require('../controller/reservationController');
 
 
-reservationRouter.use(protectRoute)
+//reservationRouter.use()
 
-reservationRouter
-.route('/checkoutsession/:id')
-.post(getCheckoutSession)
+reservationRouter.post('/slot',createReservation)
 
 
-reservationRouter
-.route('/:id')
-.post(createReservation)
+reservationRouter.post('/checkoutsession/:id',protectRoute,getCheckoutSession)
 
-reservationRouter
-.route('/getReservations')
-.get(getUserReservation)
+reservationRouter.get('/getreviewbooking',protectRoute,getreviewBooking)
+
+
+reservationRouter.get('/getReservations',protectRoute,getUserReservation)
+
+
 
 
 

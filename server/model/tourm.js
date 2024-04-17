@@ -25,7 +25,7 @@ const tourSchema = mongoose.Schema({
     duration:{
        type:String,
        required:true
-    },
+    } ,
     Location:{
       type: String,
     required: true,
@@ -55,14 +55,7 @@ const tourSchema = mongoose.Schema({
       type : String ,
       default : 'tourPage.jpg'
     },
-    manager : {
-      type : mongoose.Schema.ObjectId,
-      ref : 'userModel',
-      /** failed to implement validation role =='admin'
-      
-       */
-     // message: 'Manager must have the role of "admin".',
-    },
+
 
     seheduleType :{
       type : String

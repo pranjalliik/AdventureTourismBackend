@@ -139,7 +139,8 @@ module.exports.signUp = async function signUp(req,res){
  
     try{
       console.log('protect')
-    console.log(req.cookies +'<-cookies obj')
+
+ //   console.log(req.cookies +'<-cookies obj')
         if(!req.cookies.jwt){
           return res.status(401).json({
             message:'token not present'
@@ -169,7 +170,7 @@ req.user = fuser
 next();
     }catch(err){
       return res.json({
-          message: err.message
+          message: err.message 
       })
   }
    }

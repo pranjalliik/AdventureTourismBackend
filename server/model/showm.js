@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config({path : './config.env'})
 
 const dbConnection = process.env.DB_CONNECT;
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'); 
 
 mongoose.connect(dbConnection).then(function(db){
     console.log("show db connected");
@@ -36,9 +36,17 @@ date : {
 capacity : {
     type : Number
 },
+capacityLeft : {
+    type : Number,
+    
+},
 currCapacity : {
     type : Number,
-    default : 0
+    
+},
+expireAt : {
+    type: Date,
+    index: { expires: 0 } 
 }
 
 },

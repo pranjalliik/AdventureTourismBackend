@@ -84,4 +84,4 @@ err.statusCode = 404;*/
 next(new AppError('cannot find url on this server',404));
 })
 
-app.use(globalErrorHandler)
+app.use(globalErrorHandler) 

@@ -2,15 +2,104 @@ const reservationModel = require('../model/reservationm')
 const showModel = require('../model/showm')
 const mongoose = require('mongoose');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const Razorpay = require('razorpay')
+const shortid = require('shortid');
+const tourModel = require('../model/tourm');
 
 
-module.exports.createReservation = async function createReservation(req,res){
-    try{
-        console.log(req.body)
-        let reserData = {};
-        reserData.show = req.params.id;
-       reserData.user= req.user._id
-       let  showData = await showModel.findById(req.params.id);
+const razorpay = new Razorpay({
+	key_id: 'rzp_test_oeAvpf9MwJ4OX9',
+	key_secret: 'nI6W2bVYHIJhGvJgazvgx8oA'
+})
+
+
+exports.createReservation = async function createReservation(req,res){
+
+  try{
+
+      const secret = '6543217'
+
+      const crypto = require('crypto')
+
+      const shasum = crypto.createHmac('sha256', secret)
+      shasum.update(JSON.stringify(req.body))
+      const digest = shasum.digest('hex')
+    
+      console.log(digest, req.headers['x-razorpay-signature'])
+    
+      if (digest === req.headers['x-razorpay-signature']) {
+        console.log('request is legit')
+        // process it
+       console.log(req.body.payload.payment.entity.notes)
+       let reserData = {};
+       reserData.slot = req.body.payload.payment.entity.notes.slot;
+      reserData.user= req.body.payload.payment.entity.notes.user
+      reserData.no= req.body.payload.payment.entity.notes.no
+      reserData.tour =  req.body.payload.payment.entity.notes.tour
+      reserData.amount =  req.body.payload.payment.entity.notes.amount
+
+      let  showData = await showModel.findById(reserData.slot);
+      console.log(showData)
+
+      const options = {
+        readPreference: 'primary',
+        readConcern: { level: 'local' },
+        writeConcern: { w: 'majority' }
+    };
+    
+    const session = await mongoose.startSession();
+    let reserCreated
+    let updatedShow
+    console.log('hii')
+    try {
+     
+        await session.withTransaction(async () => {
+          console.log('hii')
+
+             reserCreated = await reservationModel.create({user : reserData.user, show: reserData.slot,tour:reserData.tour,amount : reserData.amount});
+              console.log(reserCreated)
+            console.log(reserData.slot,reserData.no)
+             updatedShow = await showModel.updateOne(
+                { _id: reserData.slot },
+                { $inc: { capacityLeft : -reserData.no } },
+                { session }
+            );
+    
+            console.log(updatedShow);
+    
+            if (!updatedShow.acknowledged) {
+                throw new Error("Show document not found or update failed.");
+            }
+    
+            // No need to call commitTransaction or endSession here.
+        });
+        
+        // The withTransaction method will commit the transaction automatically if no errors occurred.
+    console.log(reserCreated, updatedShow)
+
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            message: "Error creating reservation",
+            errorr: err.message
+        });
+    } finally {
+        session.endSession();
+    }
+       
+  
+      } else {
+        // pass it
+            console.log('request is not legit')
+      }
+
+      res.json({ status: 'ok' })
+
+
+/*
+
+       
         
        if(req.body.no > showData.capacity - showData.currCapacity){
         return  res.json({
@@ -20,57 +109,11 @@ module.exports.createReservation = async function createReservation(req,res){
 
  
        
-       const options = {
-           readPreference: 'primary',
-           readConcern: { level: 'local' },
-           writeConcern: { w: 'majority' }
-       };
-       
-       const session = await mongoose.startSession();
-       console.log(reserData)
-       let reserCreated
-       let updatedShow
-       try {
-        
-           await session.withTransaction(async () => {
-                reserCreated = await reservationModel.create( 
-                reserData
-                );
-                updatedShow = await showModel.updateOne(
-                   { _id: req.params.id },
-                   { $inc: { currCapacity : req.body.no } },
-                   { session }
-               );
-       
-               console.log(updatedShow);
-       
-               if (!updatedShow.acknowledged) {
-                   throw new Error("Show document not found or update failed.");
-               }
-       
-               // No need to call commitTransaction or endSession here.
-           });
-           
-           // The withTransaction method will commit the transaction automatically if no errors occurred.
-       
-           return res.json({
-               message: "Reservation created successfully",
-               reservation: reserCreated,
-               show: updatedShow
-           });
-       } catch (err) {
-           console.error(err);
-           return res.status(500).json({
-               message: "Error creating reservation",
-               errorr: err.message
-           });
-       } finally {
-           session.endSession();
-       }
+     
        
        
        
-
+*/
     }
     catch(err){
         return res.json({
@@ -84,64 +127,23 @@ module.exports.createReservation = async function createReservation(req,res){
 module.exports.getCheckoutSession = async function getCheckoutSession(req, res) {
     try{
     // 1) Get the currently booked tour
-
-   const tour = await showModel.findById(req.params.id)
+console.log(req.params.id)
+   const data = await showModel.findById(req.params.id)
     .populate({
       path: 'tour',
       model: 'tourModel', // Replace with the actual model name for the tour
-    });
+    }).exec();
 
- console.log(tour)
-    
- /*   const sessions = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-       success_url: `${req.protocol}://${req.get('host')}/tours/?slot=${req.params.id}&user=${req.user.id}&price=${tour.price}`,
-        cancel_url: `${req.protocol}://${req.get('host')}/tour/`,
-        customer_email: req.user.email,
-        client_reference_id: req.params.id,
-        //    description : tour.summary,
-        //            images: [
-       //     `${req.protocol}://${req.get('host')}/img/tours/${tour.imageCover}`
-         //   'https://www.hlimg.com/images/deals/360X230/deals_201808031533283847-8.jpg'
-         // ],
-        line_items: [ 
-          {
-            name: `${tour.name} Tour`,
-         
-            images: [
-              'https://www.hlimg.com/images/deals/360X230/deals_201808031533283847-8.jpg'
-            ],
-            amount: tour.price ,
-            currency: 'inr',
-            quantity: req.body.no
-          }
-        ]
+   let tprice =  data.tour.price
+if(data.capacityLeft === 0 ){
+  res.status(200).json({
 
-      });
-*/
- //  
-/*
- const product = await stripe.products.create({
-    name: tour.tour.name ,
-    description: 'a thrilling experience',
-    images: ['https://www.hlimg.com/images/deals/360X230/deals_201808031533283847-8.jpg'],
-  });
+    message : "housefull"
+    })
+}
   
-
-  const price = await stripe.prices.create({
-    product: product.id,
-    unit_amount: tour.tour.price,
-    currency: 'inr',
-  });
-  
-      line_items: [{
-      price: price.id,
-      quantity: req.body.no,
-    }],
-  
-  
-  */
-  
+ 
+  /*   stripe
   const lineItems = [{
     price_data:{
         currency:"inr",
@@ -167,12 +169,30 @@ module.exports.getCheckoutSession = async function getCheckoutSession(req, res) 
 
 
 console.log(session)
+*/
+
+console.log(req.body)
 
 
-      res.status(200).json({
-        status: 'success',
-        session
-      });
+const options = {
+    amount:  tprice * 100 * req.body.no,
+    currency : 'INR',
+    receipt: shortid.generate(),
+     payment_capture : 1
+
+}
+
+const response = await razorpay.orders.create(options)
+
+res.status(200).json({
+id: response.id,
+currency: response.currency,
+amount: response.amount,
+tour : data.tour._id, 
+name : data.tour.name,
+user : req.user._id
+})
+
 
     }catch(err){
         return res.json({
@@ -185,25 +205,89 @@ console.log(session)
 
  module.exports.getUserReservation = async function getUserReservation(req,res){
  
-  console.log('there')
   try{
-console.log('there')
-    let data = await reservationModel.find({ user: req.user._id })
+    const currentDate = new Date();
+    console.log('hii ')
+
+
+    let data = await reservationModel.find({ user: req.user._id , date: { $gt: currentDate } })
     .populate({
-      path: 'show', 
-      populate: {
-        path: 'tour',
-        model: 'tourModel', // Replace 'Tour' with your actual model name for tours
-      },
+      path: 'tour',
+      model: 'tourModel', // Replace with the actual model name for the tour
     })
-    console.log(data+'fshgk')
+    .populate({
+      path: 'show',
+      model: 'showModel' // Replace with the actual model name for the show
+    }) 
+    .exec();
+  
+    if(data){
     return  res.json({
       message : "your bookings",
       data
   })
+}else{
+  return  res.json({
+    message : "no bookings",
+    data : []
+})
+   }}catch(err){
+    return  res.json({
+      message : err.message,
+  })
+   }
+ }
+
+ module.exports.getreviewBooking = async function getreviewBooking(req,res){
+
+  try{
+console.log(req.user._id)
+    const currentDate = new Date();
+   let rdata = await reservationModel.aggregate([
+      {
+          $match: {
+              reviewed: 'false',
+               date : { $lte : currentDate},
+                user : req.user._id
+          }
+      },
+      {
+          $group: {
+              _id: "$tour", // Group by the tour field
+              reservation: { $first: "$$ROOT" } // Select the first reservation document for each tour
+          }
+      },
+      {
+          $replaceRoot: { newRoot: "$reservation" } // Replace the root document with the reservation documents
+      }
+  ]);
+
+for(let i=0;i<rdata.length;i++){
+  
+  rdata[i].tour = await tourModel.find({_id : rdata[i].tour} , 'name') 
+//  console.log(rdata.tour)
+}
+
+console.log(rdata)
+
+  if(rdata){
+    return  res.json({
+      message : "your bookings",
+      data : rdata
+  })
+}else{
+  return  res.json({
+    message : "no bookings",
+    data : []
+})
+   }
+
+
    }catch(err){
     return  res.json({
       message : err.message,
   })
    }
  }
+
+

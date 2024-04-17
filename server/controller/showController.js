@@ -10,11 +10,14 @@ exports.createShow= catchAsync(async (req,res,next)=>{
         let slotData = {};
         slotData.tour = id
         slotData.capacity = req.body.capacity;
-
-        const showdate = new Date(req.body.year, req.body.month, req.body.day, req.body.hours, req.body.min );
-        
+        let showdate ;
+        if(req.body.scheduleType === 'hourWise'){
+        showdate = new Date(req.body.year, req.body.month, req.body.day, req.body.hours, req.body.min );
+        }else{
+            showdate = new Date(req.body.year, req.body.month, req.body.day );
+        }
        slotData.date = showdate;
-
+       slotData.expireAt = showdate
        console.log(showdate)
        
        const formattedDate = showdate.toLocaleString(); // This will format the date in your local time zone
@@ -38,26 +41,25 @@ exports.allShow= catchAsync(async (req,res,next)=>{
 })
 
 exports.updateShow= catchAsync(async (req,res,next)=>{
-        console.log('update show')
+        console.log('update show', req.body)
         let id = req.params.id;
         let dataToBeUpdated = {}
         const entries = Object.entries(dataToBeUpdated);
 
         if(req.body.hasOwnProperty('hours') || req.body.hasOwnProperty('min')){
             const showdate = new Date(req.body.year, req.body.month, req.body.day, req.body.hours, req.body.min );
-        
             dataToBeUpdated.date = showdate;
         }
         if(req.body.hasOwnProperty('capacity')){
             dataToBeUpdated.capacity = req.body.capacity;
         }
-        console.log(dataToBeUpdated.date.toLocaleString())
+      console.log(dataToBeUpdated) 
 
         let show = await showModel.findByIdAndUpdate(id, dataToBeUpdated, {
             new: true, // Return the updated document
             runValidators: true // Run Mongoose schema validators on update
           });
-
+ console.log(show)
           return  res.json({
             message : "updated show ",
            data: show
@@ -73,5 +75,30 @@ exports.deleteShow = catchAsync(async(req,res,next)=>{
             message : "show DELETED",
             data: deleteshow
         })
-   
-})
+    
+}) 
+
+
+exports.getShow = catchAsync(async(req,res,next)=>{
+
+       let id = req.params.id;
+           console.log(id);
+
+let show = await showModel.findById(id);
+console.log("byee")
+if(show){
+  return  res.json({
+        message : "show",
+        data: show
+    })
+}else{
+    return  res.json({
+        message : "no show found",
+
+    })
+}
+
+
+}
+
+)

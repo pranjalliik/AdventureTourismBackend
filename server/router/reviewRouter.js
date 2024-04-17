@@ -1,20 +1,18 @@
 const express = require('express');
 let reviewRouter = express.Router();
 
-const {allReviews,getTourReview ,createReview/*,updateReview,deleteReview*/} = require('../controller/reviewcontroller');
+const {allReviews,getTourReview ,createReview,canCreateReview/*,updateReview,deleteReview*/} = require('../controller/reviewcontroller');
+let{protectRoute,isAuthorized,uploaduserphoto} = require('../controller/authcontroller');
 
 
-reviewRouter.route('/')
-.get(allReviews)
+reviewRouter.get('/',allReviews)
 
 
-reviewRouter.route("/:id")
-.get(getTourReview)
+reviewRouter.get("/:id", getTourReview)
 
 
-reviewRouter.route("/:id")
-.post(createReview)
+reviewRouter.post("/:id",protectRoute,canCreateReview, createReview)
 
-
+ 
  
 module.exports = reviewRouter;

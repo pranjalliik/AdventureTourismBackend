@@ -1,7 +1,10 @@
 const tourModel = require('../model/tourm');
+const reservationModel = require('../model/reservationm');
+
 const multer = require('multer')
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('../utils/appError')
+
 const multrtStorage = multer.diskStorage({
 destination : (req,file,cb) =>{
     cb(null,'client/src/images')
@@ -51,6 +54,31 @@ exports.createtour = catchAsync(async(req,res,next)=>{
 })
 
 
+
+exports.updatephoto = catchAsync(async(req,res,next)=>{
+
+      console.log(req.file)
+      console.log(req.body)
+      let id = req.params.id;
+
+
+      let tour = await tourModel.findById(id); 
+      tour['photo'] = req.file.filename
+
+ 
+      
+      const updatedData = await tour.save();
+    
+           console.log(updatedData  + "gjk")
+ 
+        return  res.json({
+         message : "tour updated",
+        data: updatedData
+        })
+    })
+
+
+
 exports.alltour = catchAsync(async (req, res, next) =>{
   
         console.log('alltour')
@@ -66,6 +94,72 @@ exports.alltour = catchAsync(async (req, res, next) =>{
             })
     
 })
+
+
+
+exports.tourMonthlySale = catchAsync(async (req, res, next) =>{
+  
+  const monthlySales = await reservationModel.aggregate([
+    {
+      $match: {
+        // Match sales within the last year
+        date: { $gte: new Date(new Date().setFullYear(new Date().getFullYear() - 1)) }
+      }
+    },
+    {
+      $project: {
+        tour: 1,
+        month: { $month: "$date" },
+        year: { $year: "$date" },
+        amount: 1
+      }
+    },
+    {
+      $group: {
+        _id: { tour: "$tour", month: "$month", year: "$year" },
+        totalSales: { $sum: "$amount" }
+      }
+    },
+    {
+      $sort: {
+        "_id.year": 1,
+        "_id.month": 1
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        tour: "$_id.tour",
+        month: "$_id.month",
+        year: "$_id.year",
+        totalSales: 1
+      }
+    }
+  ]);
+  
+console.log(monthlySales)
+
+      for(let i=0;i<monthlySales.length;i++){
+        let tid = monthlySales[i].tour
+        console.log(tid)
+        monthlySales[i].tour = await tourModel.findById(tid).select('name')
+      }
+      
+      console.log(monthlySales);
+      
+
+    res.status(200).json({
+        message:'tour retrived',
+        data: monthlySales
+        })
+
+})    
+
+
+
+
+
+
 
 
 exports.allthreetour = catchAsync(async (req,res,next)=>{
@@ -153,30 +247,7 @@ if(!tour){
 }
 )
 
-exports.gettour = catchAsync(async(req,res,next)=>{
 
-    console.log("gettour i stay ");
-       let id = req.params.id;
-           console.log(id);
-
-let tour = await tourModel.findById(id);
-console.log("byee")
-if(tour){
-  return  res.json({
-        message : "all tour",
-        data: tour
-    })
-}else{
-    return  res.json({
-        message : "no tour found",
-
-    })
-}
-
-
-}
-
-)
 
 exports.getAdmintour = catchAsync(async (req,res,next)=>{
 
@@ -200,5 +271,23 @@ if(tour){
     })
 }
 
+
+})
+
+
+
+exports.tourSales = catchAsync(async (req, res, next) =>{
+
+  let salesData = await reservationModel.find().populate('tour');
+  const salesByTour = {};
+  salesData.forEach(sale => {
+      const tourName = sale.tour.name;
+      const saleAmount = sale.amount;
+      salesByTour[tourName] = (salesByTour[tourName] || 0) + saleAmount;
+  })
+  res.status(200).json({
+    message:'tour retrived',
+    data: salesByTour
+    })
 
 })

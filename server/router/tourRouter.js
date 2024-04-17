@@ -2,7 +2,7 @@
 const express = require('express');
 let tourRouter = express.Router();
 let multer = require('multer')
-const {createtour,alltour,deletetour,updatetour,gettour,uploadTourPhoto,allthreetour,getAdmintour} = require('../controller/tourcontroller');
+const {updatephoto, tourSales, tourMonthlySale, createtour,alltour,deletetour,updatetour,gettour,uploadTourPhoto,allthreetour,getAdmintour} = require('../controller/tourcontroller');
 let{protectRoute,isAuthorized,uploaduserphoto} = require('../controller/authcontroller');
 const upload = multer({dest:'uploads/'})
 
@@ -13,33 +13,23 @@ tourRouter.get('/topthree',allthreetour)
 
 
 
-
-
-
-tourRouter.get('/admin',protectRoute,getAdmintour)
-//tourRouter.use(protectRoute)
-//isAuthorized(['admin','manager']),
-
+tourRouter.get('/monthlysales',protectRoute,isAuthorized(['admin']),tourMonthlySale)
+tourRouter.get('/toursales',protectRoute,isAuthorized(['admin']),tourSales)
 tourRouter.get('/:id',gettour)
 
 
+tourRouter.patch('/crud/:id',protectRoute,isAuthorized(['admin']),updatetour)
+
+tourRouter.patch('/updatephoto/:id',protectRoute,isAuthorized(['admin']),uploadTourPhoto,updatephoto)
 
 
 
-tourRouter
-.route('/crud/:id') 
-.patch(updatetour)
+
+tourRouter.post('/crud',protectRoute,isAuthorized(['admin']),uploadTourPhoto,createtour)
 
 
+tourRouter.delete('/crud/:id',protectRoute,isAuthorized(['admin']),deletetour)
 
-tourRouter.use(isAuthorized(['admin']));
-tourRouter
-.route('/crud')
-.post(uploadTourPhoto,createtour)
-
-tourRouter
-.route('/crud/:id')
-.delete(deletetour)
 
 
 

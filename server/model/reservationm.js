@@ -30,8 +30,24 @@ const reservationSchema = new mongoose.Schema({
         required : [true,'review must belong to a plan']
 
     },
+    date : {
+        type : Date,
+        default: Date.now 
+    },
 
-
+  reviewed :{
+  type : Boolean,
+  default : false
+  
+  },
+     
+    tour : {
+    type : mongoose.Schema.ObjectId,
+    ref : 'tourModel', 
+    },
+    amount :  {
+        type : Number
+    }
 });
 
 
