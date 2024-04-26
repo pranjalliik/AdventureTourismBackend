@@ -48,9 +48,9 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(compression());
 
-
-const server =  app.listen(5000, () => {
-  console.log('Server listening on port 5000');
+const port = process.env.P0RT || 5000
+const server =  app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
 
 process.on('unhandledRejection', err => {
