@@ -35,8 +35,7 @@ exports.uploadTourPhoto = upload.single('photo');
 
 exports.createtour = catchAsync(async(req,res,next)=>{
     try{
-        console.log(req.file)
-        console.log(req.body)
+      
         let tourData = req.body;
         if(req.file) tourData.photo = req.file.filename
         let tour = await tourModel.create(tourData);
@@ -57,8 +56,7 @@ exports.createtour = catchAsync(async(req,res,next)=>{
 
 exports.updatephoto = catchAsync(async(req,res,next)=>{
 
-      console.log(req.file)
-      console.log(req.body)
+   
       let id = req.params.id;
 
 
@@ -69,7 +67,6 @@ exports.updatephoto = catchAsync(async(req,res,next)=>{
       
       const updatedData = await tour.save();
     
-           console.log(updatedData  + "gjk")
  
         return  res.json({
          message : "tour updated",
@@ -81,7 +78,6 @@ exports.updatephoto = catchAsync(async(req,res,next)=>{
 
 exports.alltour = catchAsync(async (req, res, next) =>{
   
-        console.log('alltour')
         let tour = await tourModel.find();
         if(!tour){
           next(new AppError('tours not found'))
@@ -137,15 +133,12 @@ exports.tourMonthlySale = catchAsync(async (req, res, next) =>{
     }
   ]);
   
-console.log(monthlySales)
 
       for(let i=0;i<monthlySales.length;i++){
         let tid = monthlySales[i].tour
-        console.log(tid)
         monthlySales[i].tour = await tourModel.findById(tid).select('name')
       }
       
-      console.log(monthlySales);
       
 
     res.status(200).json({
@@ -215,7 +208,6 @@ exports.updatetour = catchAsync( async(req,res,next)=>{
             runValidators: true // Run Mongoose schema validators on update
           });
         */
-          console.log(updatedData  + "gjk")
 
        return  res.json({
         message : "plan updated",
@@ -226,9 +218,7 @@ exports.updatetour = catchAsync( async(req,res,next)=>{
 
 exports.gettour = catchAsync(async (req,res,next)=>{
    
-        console.log("gettou at t he sunr");
        let id = req.params.id;
-           console.log(id);
 
 let tour = await tourModel.findById(id);
 
@@ -252,13 +242,10 @@ if(!tour){
 exports.getAdmintour = catchAsync(async (req,res,next)=>{
 
         let id = req.user._id;
-        console.log(id +'every');
 
-        console.log("gettour kl,;");
            
 
 let tour = await tourModel.find({manager : id});
-console.log("byee")
 if(tour){
   return  res.json({
         message : "all tours og admin",

@@ -60,7 +60,6 @@ exports.canCreateReview = catchAsync( async (req,res,next)=>{
 
      const currentDate = new Date();
 let flag = false
-console.log(reservation)
      for(let i=0;i<reservation.length;i++){
 
         if(!reservation[i].show ||currentDate>reservation[i].show.date){
@@ -85,10 +84,8 @@ console.log(reservation)
 
     exports.allReviews = catchAsync(async (req,res,next)=>{
 
-        console.log("allreview") 
         let reviews = await reviewModel.find();
         let arr = reviews.slice(0,3);
-        console.log(arr)
         if(reviews){
             res.json({
             message:'reviews retrived',

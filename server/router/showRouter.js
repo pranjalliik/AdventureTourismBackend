@@ -15,20 +15,15 @@ showRouter.route('/:id1/:id2')
 */
 //showRouter.use(protectRoute)
 //showRouter.use(isAuthorized(['admin','manager']))
-showRouter
-.route('/:id')
-.post(createShow)
+showRouter.post('/:id',protectRoute,isAuthorized(['admin','manager']),createShow)
 
 
 
 showRouter.get('/show/:id',getShow)
 
-showRouter.route('/:id')
-.patch(updateShow)
+showRouter.patch('/:id',protectRoute,isAuthorized(['admin','manager']),updateShow)
 
-showRouter
-.route('/:id')
-.delete(deleteShow)
+showRouter.delete('/:id',protectRoute,isAuthorized(['admin','manager']),deleteShow)
 
 module.exports = showRouter;  
 

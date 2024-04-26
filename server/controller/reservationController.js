@@ -5,19 +5,20 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Razorpay = require('razorpay')
 const shortid = require('shortid');
 const tourModel = require('../model/tourm');
-
+const catchAsync = require('./../utils/catchAsync');
+const AppError = require('../utils/appError')
 
 const razorpay = new Razorpay({
-	key_id: 'rzp_test_oeAvpf9MwJ4OX9',
-	key_secret: 'nI6W2bVYHIJhGvJgazvgx8oA'
+	key_id: process.env.RAZORPAY_KEY_ID,
+	key_secret: process.env.RAZORPAY_SECRET_KEY
 })
 
 
-exports.createReservation = async function createReservation(req,res){
+  module.exports.createReservation = catchAsync(async (req, res, next) => {
 
-  try{
+  
 
-      const secret = '6543217'
+      const secret = process.env.CRYPTO_SECRET
 
       const crypto = require('crypto')
 
@@ -25,47 +26,41 @@ exports.createReservation = async function createReservation(req,res){
       shasum.update(JSON.stringify(req.body))
       const digest = shasum.digest('hex')
     
-      console.log(digest, req.headers['x-razorpay-signature'])
     
       if (digest === req.headers['x-razorpay-signature']) {
-        console.log('request is legit')
         // process it
-       console.log(req.body.payload.payment.entity.notes)
        let reserData = {};
        reserData.slot = req.body.payload.payment.entity.notes.slot;
       reserData.user= req.body.payload.payment.entity.notes.user
       reserData.no= req.body.payload.payment.entity.notes.no
       reserData.tour =  req.body.payload.payment.entity.notes.tour
       reserData.amount =  req.body.payload.payment.entity.notes.amount
-
+      reserData.capacityToReduce = req.body.payload.payment.entity.notes.capacityToReduce,
+      reserData.date = req.body.payload.payment.entity.notes.date
       let  showData = await showModel.findById(reserData.slot);
-      console.log(showData)
 
       const options = {
         readPreference: 'primary',
         readConcern: { level: 'local' },
-        writeConcern: { w: 'majority' }
+        writeConcern: { w: 'majority' } 
     };
     
     const session = await mongoose.startSession();
     let reserCreated
     let updatedShow
-    console.log('hii')
+
     try {
      
         await session.withTransaction(async () => {
-          console.log('hii')
 
-             reserCreated = await reservationModel.create({user : reserData.user, show: reserData.slot,tour:reserData.tour,amount : reserData.amount});
-              console.log(reserCreated)
-            console.log(reserData.slot,reserData.no)
+             reserCreated = await reservationModel.create({user : reserData.user, show: reserData.slot,tour:reserData.tour,amount : reserData.amount ,date : reserData.date});
+          
              updatedShow = await showModel.updateOne(
                 { _id: reserData.slot },
-                { $inc: { capacityLeft : -reserData.no } },
+                { $inc: { capacityLeft : -reserData.capacityToReduce } },
                 { session }
             );
     
-            console.log(updatedShow);
     
             if (!updatedShow.acknowledged) {
                 throw new Error("Show document not found or update failed.");
@@ -75,11 +70,9 @@ exports.createReservation = async function createReservation(req,res){
         });
         
         // The withTransaction method will commit the transaction automatically if no errors occurred.
-    console.log(reserCreated, updatedShow)
 
 
     } catch (err) {
-        console.error(err);
         return res.status(500).json({
             message: "Error creating reservation",
             errorr: err.message
@@ -91,56 +84,30 @@ exports.createReservation = async function createReservation(req,res){
   
       } else {
         // pass it
-            console.log('request is not legit')
       }
 
       res.json({ status: 'ok' })
 
-
-/*
-
-       
-        
-       if(req.body.no > showData.capacity - showData.currCapacity){
-        return  res.json({
-            message : "housefull",
-        })
-       }
-
  
-       
-     
-       
-       
-       
-*/
-    }
-    catch(err){
-        return res.json({
-            message: err.message
-        })
-    }
+})
 
-}
-
-
-module.exports.getCheckoutSession = async function getCheckoutSession(req, res) {
-    try{
+module.exports.getCheckoutSession = catchAsync(async (req, res, next) => {
+   
     // 1) Get the currently booked tour
-console.log(req.params.id)
    const data = await showModel.findById(req.params.id)
     .populate({
       path: 'tour',
       model: 'tourModel', // Replace with the actual model name for the tour
     }).exec();
-
+    
    let tprice =  data.tour.price
-if(data.capacityLeft === 0 ){
-  res.status(200).json({
+if(data.capacityLeft < req.body.capacityToReduce){
 
-    message : "housefull"
+  res.status(400).json(
+    {
+     message : "housefull"
     })
-}
+}else{
   
  
   /*   stripe
@@ -171,9 +138,8 @@ if(data.capacityLeft === 0 ){
 console.log(session)
 */
 
-console.log(req.body)
-
-
+ 
+//console.log('hii')
 const options = {
     amount:  tprice * 100 * req.body.no,
     currency : 'INR',
@@ -190,27 +156,24 @@ currency: response.currency,
 amount: response.amount,
 tour : data.tour._id, 
 name : data.tour.name,
-user : req.user._id
+user : req.user._id,
+date : data.expireAt, 
+capacityToReduce : req.body.capacityToReduce
 })
 
-
-    }catch(err){
-        return res.json({
-            message: err.message
-        })
     }
 
     }
+)
 
 
- module.exports.getUserReservation = async function getUserReservation(req,res){
- 
-  try{
+    module.exports.getUserReservation = catchAsync(async (req, res, next) => {
+  
     const currentDate = new Date();
-    console.log('hii ')
 
 
-    let data = await reservationModel.find({ user: req.user._id , date: { $gt: currentDate } })
+
+    let data = await reservationModel.find({ user: req.user._id  , date : { $gt : currentDate} })
     .populate({
       path: 'tour',
       model: 'tourModel', // Replace with the actual model name for the tour
@@ -220,6 +183,7 @@ user : req.user._id
       model: 'showModel' // Replace with the actual model name for the show
     }) 
     .exec();
+
   
     if(data){
     return  res.json({
@@ -231,19 +195,14 @@ user : req.user._id
     message : "no bookings",
     data : []
 })
-   }}catch(err){
-    return  res.json({
-      message : err.message,
-  })
    }
- }
+ })
 
- module.exports.getreviewBooking = async function getreviewBooking(req,res){
 
-  try{
-console.log(req.user._id)
+ module.exports.getreviewBooking = catchAsync(async (req, res, next) => {
+
     const currentDate = new Date();
-   let rdata = await reservationModel.aggregate([
+ /*  let rdata = await reservationModel.aggregate([
       {
           $match: {
               reviewed: 'false',
@@ -260,15 +219,18 @@ console.log(req.user._id)
       {
           $replaceRoot: { newRoot: "$reservation" } // Replace the root document with the reservation documents
       }
-  ]);
+  ]);*/
 
-for(let i=0;i<rdata.length;i++){
+  let rdata = await reservationModel.find({ user: req.user._id  , date : { $lte : currentDate} })
+
+
+ // console.log(rdata + 'rgb')
+
+  for(let i=0;i<rdata.length;i++){
   
   rdata[i].tour = await tourModel.find({_id : rdata[i].tour} , 'name') 
-//  console.log(rdata.tour)
 }
 
-console.log(rdata)
 
   if(rdata){
     return  res.json({
@@ -281,13 +243,6 @@ console.log(rdata)
     data : []
 })
    }
-
-
-   }catch(err){
-    return  res.json({
-      message : err.message,
-  })
-   }
- }
+ })
 
 

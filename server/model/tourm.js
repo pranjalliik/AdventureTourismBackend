@@ -20,7 +20,7 @@ const tourSchema = mongoose.Schema({
        type: String,
        required: true,
        unique:true,
-       maxLength : [20,'plan name should not exceed than 20 characters']
+       
     },
     duration:{
        type:String,
@@ -59,7 +59,19 @@ const tourSchema = mongoose.Schema({
 
     seheduleType :{
       type : String
-    }
+    },
+    description : {
+      type : String
+    },
+    category : {
+      type :String
+    },
+    capacityType : {
+      type : String
+    },
+    maxBooking : {
+      type : Number
+    } 
     }
    );
    

@@ -5,7 +5,8 @@ const Email = require('../utils/email')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-
+const catchAsync = require('./../utils/catchAsync');
+const AppError = require('../utils/appError')
 const secret = "gyhuijofgratnmp9yn7rt1usnb73uihejkmse"
 const saltRounds = 10;
 
@@ -14,12 +15,8 @@ const  signToken = id =>{
  return   jwt.sign({id },secret,{expiresIn: "60d"})
 }
 
-
-module.exports.signUp = async function signUp(req,res){
-       console.log("signup");
+exports.signUp = catchAsync(async(req,res,next)=>{
                 
-    try{  
- 
        let user = await userModel.create({
         name : req.body.name,
         email : req.body.email,
@@ -36,11 +33,17 @@ module.exports.signUp = async function signUp(req,res){
    res.cookie('jwt',token,cookieopt)
   
        if(user){
-        console.log(req.user + 'its me hii')
+
+        let data = {
+          email : user.email,
+          name : user.name
+        }
+
            res.status(200).json({
                
                message:"user signed up",
-               data: user,
+               data,
+               cookieopt,
                token
            })
        }
@@ -49,55 +52,46 @@ module.exports.signUp = async function signUp(req,res){
                message:"error "
            })
        }
-   }
-   catch(err){
-       res.json({
-               message: err.message,
-               
-       })
-   }
-   }
+  
+   })
  
-
-   module.exports.signin = async function signin(req,res){
+   exports.signin = catchAsync(async(req,res,next)=>{
          let {email,password} = req.body
  
          const user = await userModel.findOne({email}).select('+password');
  
          if(!user || !(await user.correctPassword(password,user.password))){
                 return res.status(401).json({
-                   message:'wrong credentialssss'
+                   message:'wrong credentials'
                    }) 
                  }else{
              const token = signToken(user._id);
                const cookieopt = {
                expires: new Date(
-               Date.now() + 10 * 24 *60 * 60 *1000),httpOnly:true
+               Date.now() + 60 * 24 *60 * 60 *1000),httpOnly:true
       
                }
            res.cookie('jwt',token,cookieopt)
            
              return res.status(200).json({
-             message:'signin ',
+             message:'signin ',  
              user : user,
-             token
+             token,
+             cookieopt
             }) 
             }
 
-             }
+             })
              
    
    module.exports.isAuthorized =  function isAuthorized(roles) {
     
     return async function(req, res, next) {
-      console.log("isauthorized")
       try {
         //console.log(req.user._id);
-        console.log(roles +'im the prob');
         
         if (roles.includes(req.user.role)) {
           if(req.user.role === 'admin'){
-            console.log("is authorized");
           next();
           }else  if(req.user.role === 'manager'){
            
@@ -105,11 +99,9 @@ module.exports.signUp = async function signUp(req,res){
             let tour = await tourModel.findById(tourId); 
             let managerId = tour.manager;
             if(String(managerId[0]._id) === String(req.user._id)){
-              console.log("manager is authorized");
               next();
             } else{
-             console.log(managerId[0]._id +'at tea');
-             console.log(req.user._id+'time');
+        
 
               res.status(401).json({
                 message: "manager not allowed"
@@ -118,14 +110,12 @@ module.exports.signUp = async function signUp(req,res){
 
           }
         } else {
-          console.log('you not allowed')
 
           res.status(401).json({
             message: "not allowed"
           });
         }
       } catch (err) {
-        console.log(err)
         res.status(500).json({
           message: err.message
         });
@@ -135,30 +125,27 @@ module.exports.signUp = async function signUp(req,res){
 
    
 
-   module.exports.protectRoute = async function protectRoute(req,res,next){
- 
-    try{
-      console.log('protect')
+   module.exports.protectRoute = catchAsync(async (req, res, next) => {
 
- //   console.log(req.cookies +'<-cookies obj')
+
+   //console.log(JSON.stringify(req.cookies) +'<-cookies obj')
         if(!req.cookies.jwt){
           return res.status(401).json({
             message:'token not present'
           }) }
 
           let token = req.cookies.jwt
-          console.log("protect")
 
    
 
 // token veriication
 
 const decoded = jwt.verify(token, secret);
-console.log(decoded)
+//console.log(decoded)
 
 // check if user still exists
 const fuser = await userModel.findById(decoded.id)
-console.log('user info-> ', fuser)
+//console.log('user info-> ', fuser)
 if(!fuser){
     return res.status(401).json({
         message:'user no longer exists'
@@ -168,30 +155,21 @@ if(!fuser){
 req.user = fuser
 
 next();
-    }catch(err){
-      return res.json({
-          message: err.message 
-      })
-  }
-   }
+   
+   })
 
+   exports.signout = catchAsync(async(req,res,next)=>{
 
-   module.exports.signout =  function logout(req,res){
-    console.log("signout");
-
-    try{
     res.cookie('jwt',' ',{maxAge:1});
     res.json({
      message: "logged out"
-    })}catch(err){
-      message : err.message
-    }
-          }
+    })
+          })
 
 
 module.exports.forgotpass =async function forgotpass(req,res){
   try{
-    console.log(req.body.email)
+    
     const email = req.body.email;
     const user = await userModel.findOne({email})
     
@@ -207,7 +185,6 @@ module.exports.forgotpass =async function forgotpass(req,res){
 
   
       await user.save({validateBeforeSave :false})
-    console.log('vbnm')
     try {
     const reseturl = `localhost:3000/users/resetpassword/${token}` ;
 
@@ -234,9 +211,8 @@ module.exports.forgotpass =async function forgotpass(req,res){
   }
 }
 
-module.exports.resetpass =async function resetpass(req,res){
-try{
- console.log('ayee') 
+exports.resetpass = catchAsync(async(req,res,next)=>{
+
   let resetToken = req.params.token
   hashedtoken = crypto
                 .createHash('sha256')
@@ -273,18 +249,12 @@ res.cookie('jwt',token,cookieopt)
         token : token
       })
 
-}catch(err){
-  res.json({
-    message: err.message,
-    
+
 })
-}
-
-}
 
 
-module.exports.updatepass =async function resetpass(req,res){
-  try{
+exports.updatepass = catchAsync(async(req,res,next)=>{
+
       let {password} = req.body
       const user = await userModel.findOne({email : req.user.email}).select('+password');
       if(!user || !(await user.correctPassword(password,user.password))){
@@ -305,7 +275,6 @@ module.exports.updatepass =async function resetpass(req,res){
  res.cookie('jwt',token,cookieopt)
 
      if(updatedpassworduser){
-      console.log(req.user)
          res.json({
              
              message:"user signed up",
@@ -319,13 +288,5 @@ module.exports.updatepass =async function resetpass(req,res){
          })
      }
 
-           }
-
-
-  }catch(err){
-      return res.json({
-          message: err.message
-      })
-  }
-
-}
+ }
+})

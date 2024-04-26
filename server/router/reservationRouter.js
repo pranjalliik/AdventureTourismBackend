@@ -5,7 +5,6 @@ let{protectRoute,isAuthorized} = require('../controller/authcontroller');
 let{getreviewBooking ,createReservation, getCheckoutSession,getUserReservation} = require('../controller/reservationController');
 
 
-//reservationRouter.use()
 
 reservationRouter.post('/slot',createReservation)
 
