@@ -7,6 +7,7 @@ const cors = require('cors');
 const express =  require("express");
 const dotenv = require('dotenv');
 const morgan = require('morgan');
+const compression = require('compression');
 
 
 
@@ -45,6 +46,7 @@ app.use(morgan('dev'));
 // Middleware to parse cookies
 app.use(cookieParser());
 app.use(express.json());
+app.use(compression());
 
 
 const server =  app.listen(5000, () => {

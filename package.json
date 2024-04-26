@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start" : "node App.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +13,8 @@
   "dependencies": {
     "axios": "^1.4.0",
     "bcrypt": "^5.1.1",
+    "build.js": "^0.3.0",
+    "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -26,5 +29,8 @@
     "shortid": "^2.2.16",
     "stripe": "^14.4.0",
     "trace-log": "^1.1.1"
+  },
+  "engines": {
+    "node": ">=10.0.0"
   }
 }
