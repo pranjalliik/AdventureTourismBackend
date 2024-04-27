@@ -27,7 +27,7 @@ dotenv.config({path : './config.env'})
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://adventure-tourism-frontend-33wh5xzyr-pranjali-kaushiks-projects.vercel.app',
   credentials: true
 }));
 
@@ -48,7 +48,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(compression());
 
-const port = process.env.P0RT || 5000
+const port = process.env.P0RT || 10000
 const server =  app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
