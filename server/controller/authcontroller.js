@@ -128,7 +128,7 @@ exports.signUp = catchAsync(async(req,res,next)=>{
    module.exports.protectRoute = catchAsync(async (req, res, next) => {
 
 
-   //console.log(JSON.stringify(req.cookies) +'<-cookies obj')
+   console.log(JSON.stringify(req.cookies) +'<-cookies obj')
         if(!req.cookies.jwt){
           return res.status(401).json({
             message:'token not present'
