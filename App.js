@@ -27,7 +27,7 @@ dotenv.config({path : './config.env'})
 const app = express();
 
 app.use(cors({
-  origin: 'https://adventure-tourism-frontend-33wh5xzyr-pranjali-kaushiks-projects.vercel.app',
+  origin: 'https://venturez-topaz.vercel.app',
   credentials: true
 }));
 
