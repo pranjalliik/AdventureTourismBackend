@@ -26,7 +26,10 @@ dotenv.config({path : './config.env'})
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://venturez-topaz.vercel.app',
+  credentials: true
+}));
 
 // Custom middleware to log request information
 const logRequestInfo = (req, res, next) => {
