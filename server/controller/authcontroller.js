@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('../utils/appError')
-const secret = "gyhuijofgratnmp9yn7rt1usnb73uihejkmse"
+const secret = process.env.SECRET
 const saltRounds = 10;
 
 
