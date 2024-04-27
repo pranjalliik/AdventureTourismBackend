@@ -26,10 +26,7 @@ dotenv.config({path : './config.env'})
 
 const app = express();
 
-app.use(cors({
-  origin: 'https://adventuretourismfrontend.onrender.com',
-  credentials: true
-}));
+app.use(cors());
 
 // Custom middleware to log request information
 const logRequestInfo = (req, res, next) => {
