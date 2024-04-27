@@ -68,7 +68,7 @@ exports.signUp = catchAsync(async(req,res,next)=>{
              const token = signToken(user._id);
                const cookieopt = {
                expires: new Date(
-               Date.now() + 60 * 24 *60 * 60 *1000),httpOnly:true,secure : true,  sameSite: 'None'
+               Date.now() + 60 * 24 *60 * 60 *1000),httpOnly:true,secure : true
       
                }
            res.cookie('jwt',token,cookieopt)
