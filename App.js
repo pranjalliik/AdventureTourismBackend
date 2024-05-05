@@ -27,7 +27,7 @@ dotenv.config({path : './config.env'})
 const app = express();
 
 app.use(cors({
-  origin: 'https://www.wanderwild.online',
+  origin: 'https://venturez-eight.vercel.app',
   credentials: true
 }));
 
